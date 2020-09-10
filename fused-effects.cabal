@@ -139,6 +139,7 @@ test-suite test
   hs-source-dirs: test
   main-is:        Test.hs
   other-modules:
+    Accum
     Catch
     Choose
     Cull
