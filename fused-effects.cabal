@@ -106,7 +106,9 @@ library
     Control.Effect.Writer.Internal
   build-depends:
       base          >= 4.9 && < 4.15
+    , exceptions    >= 0.10 && < 0.11
     , transformers  >= 0.4 && < 0.6
+    , unliftio-core >= 0.2 && < 0.3
 
 
 test-suite examples

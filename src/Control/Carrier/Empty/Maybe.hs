@@ -23,6 +23,7 @@ module Control.Carrier.Empty.Maybe
 
 import Control.Algebra
 import Control.Effect.Empty
+import Control.Monad.Catch
 import Control.Monad.Fail as Fail
 import Control.Monad.Fix
 import Control.Monad.IO.Class
@@ -79,7 +80,7 @@ execEmpty = fmap isJust . runEmpty
 
 -- | @since 1.0.0.0
 newtype EmptyC m a = EmptyC (MaybeT m a)
-  deriving (Algebra (Empty :+: sig), Applicative, Functor, Monad, MonadFix, MonadIO, MonadTrans)
+  deriving (Algebra (Empty :+: sig), Applicative, Functor, Monad, MonadFix, MonadIO, MonadTrans, MonadThrow, MonadMask, MonadCatch)
 
 -- | 'EmptyC' passes 'Fail.MonadFail' operations along to the underlying monad @m@, rather than interpreting it as a synonym for 'empty' à la 'MaybeT'.
 instance Fail.MonadFail m => Fail.MonadFail (EmptyC m) where

@@ -16,9 +16,11 @@ import Control.Algebra
 import Control.Applicative (Alternative)
 import Control.Effect.Lift
 import Control.Monad (MonadPlus)
+import Control.Monad.Catch (MonadThrow, MonadCatch, MonadMask)
 import Control.Monad.Fail as Fail
 import Control.Monad.Fix
 import Control.Monad.IO.Class
+import Control.Monad.IO.Unlift
 import Control.Monad.Trans.Class
 
 -- | Extract a 'Lift'ed 'Monad'ic action from an effectful computation.
@@ -30,7 +32,7 @@ runM (LiftC m) = m
 
 -- | @since 1.0.0.0
 newtype LiftC m a = LiftC (m a)
-  deriving (Alternative, Applicative, Functor, Monad, Fail.MonadFail, MonadFix, MonadIO, MonadPlus)
+  deriving (Alternative, Applicative, Functor, Monad, Fail.MonadFail, MonadFix, MonadIO, MonadPlus, MonadUnliftIO, MonadThrow, MonadCatch, MonadMask)
 
 instance MonadTrans LiftC where
   lift = LiftC

@@ -1,7 +1,11 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -20,10 +24,13 @@ import Control.Algebra
 import Control.Applicative (Alternative(..), liftA2)
 import Control.Effect.Reader
 import Control.Monad (MonadPlus)
+import Control.Monad.Catch
 import Control.Monad.Fail as Fail
 import Control.Monad.Fix
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Class
+import Control.Monad.Trans.Reader (ReaderT(..))
+import Data.Coerce
 
 -- | Run a 'Reader' effect with the passed environment value.
 --
@@ -45,6 +52,21 @@ runReader r (ReaderC runReaderC) = runReaderC r
 -- | @since 1.0.0.0
 newtype ReaderC r m a = ReaderC (r -> m a)
   deriving (Functor)
+
+instance MonadThrow m => MonadThrow (ReaderC r m) where
+  throwM :: forall e a. Exception e => e -> ReaderC r m a
+  throwM = coerce @(e -> ReaderT r m a) throwM
+
+instance MonadCatch m => MonadCatch (ReaderC r m) where
+  catch :: forall e a. Exception e => ReaderC r m a -> (e -> ReaderC r m a) -> ReaderC r m a
+  catch = coerce @(ReaderT r m a -> (e -> ReaderT r m a) -> ReaderT r m a) catch
+
+instance MonadMask m => MonadMask (ReaderC r m) where
+  mask f = ReaderC (runReaderT (mask (\restore -> ReaderT (flip runReader (f (ReaderC . runReaderT . restore . ReaderT . flip runReader))))))
+  uninterruptibleMask f = ReaderC (runReaderT (uninterruptibleMask (\restore -> ReaderT (flip runReader (f (ReaderC . runReaderT . restore . ReaderT . flip runReader))))))
+
+  generalBracket :: forall a b c. ReaderC r m a -> (a -> ExitCase b -> ReaderC r m c) -> (a -> ReaderC r m b) -> ReaderC r m (b, c)
+  generalBracket = coerce @(ReaderT r m a -> (a -> ExitCase b -> ReaderT r m c) -> (a -> ReaderT r m b) -> ReaderT r m (b, c)) generalBracket
 
 instance Applicative m => Applicative (ReaderC r m) where
   pure = ReaderC . const . pure

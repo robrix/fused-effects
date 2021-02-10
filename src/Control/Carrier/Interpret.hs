@@ -29,6 +29,8 @@ import Control.Algebra
 import Control.Applicative (Alternative)
 import Control.Carrier.State.Strict
 import Control.Monad (MonadPlus)
+import Control.Monad.Catch (MonadCatch, MonadMask, MonadThrow)
+import Control.Monad.IO.Unlift (MonadUnliftIO)
 import Control.Monad.Fail as Fail
 import Control.Monad.Fix
 import Control.Monad.IO.Class
@@ -87,7 +89,7 @@ runInterpretState handler state m
 
 -- | @since 1.0.0.0
 newtype InterpretC s (sig :: (Type -> Type) -> (Type -> Type)) m a = InterpretC { runInterpretC :: m a }
-  deriving (Alternative, Applicative, Functor, Monad, Fail.MonadFail, MonadFix, MonadIO, MonadPlus)
+  deriving (Alternative, Applicative, Functor, Monad, Fail.MonadFail, MonadFix, MonadIO, MonadPlus, MonadCatch, MonadMask, MonadThrow, MonadUnliftIO)
 
 instance MonadTrans (InterpretC s sig) where
   lift = InterpretC

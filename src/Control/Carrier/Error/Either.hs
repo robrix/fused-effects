@@ -19,6 +19,7 @@ import Control.Algebra
 import Control.Applicative (Alternative(..))
 import Control.Effect.Error
 import Control.Monad (MonadPlus)
+import Control.Monad.Catch
 import Control.Monad.Fail as Fail
 import Control.Monad.Fix
 import Control.Monad.IO.Class
@@ -44,7 +45,7 @@ runError (ErrorC m) = runExceptT m
 
 -- | @since 0.1.0.0
 newtype ErrorC e m a = ErrorC (ExceptT e m a)
-  deriving (Algebra (Error e :+: sig), Applicative, Functor, Monad, Fail.MonadFail, MonadFix, MonadIO, MonadTrans)
+  deriving (Algebra (Error e :+: sig), Applicative, Functor, Monad, Fail.MonadFail, MonadFix, MonadIO, MonadTrans, MonadCatch, MonadMask, MonadThrow)
 
 -- | 'ErrorC' passes 'Alternative' operations along to the underlying monad @m@, rather than combining errors à la 'ExceptT'.
 instance (Alternative m, Monad m) => Alternative (ErrorC e m) where

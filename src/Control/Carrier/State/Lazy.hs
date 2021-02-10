@@ -26,10 +26,13 @@ import Control.Algebra
 import Control.Applicative (Alternative(..))
 import Control.Effect.State
 import Control.Monad (MonadPlus)
+import Control.Monad.Catch
 import Control.Monad.Fail as Fail
 import Control.Monad.Fix
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Class
+import Control.Monad.Trans.State.Lazy (StateT(..))
+import Data.Tuple (swap)
 
 -- | Run a lazy 'State' effect, yielding the result value and the final state. More programs terminate with lazy state than strict state, but injudicious use of lazy state may lead to thunk buildup.
 --
@@ -47,6 +50,12 @@ import Control.Monad.Trans.Class
 runState :: s -> StateC s m a -> m (s, a)
 runState s (StateC runStateC) = runStateC s
 {-# INLINE[3] runState #-}
+
+toStateT :: Monad m => StateC s m a -> StateT s m a
+toStateT (StateC m) = StateT (fmap (fmap swap) m)
+
+fromStateT :: Monad m => StateT s m a -> StateC s m a
+fromStateT (StateT m) = StateC (fmap (fmap swap) m)
 
 -- | Run a lazy 'State' effect, yielding the result value and discarding the final state.
 --
@@ -127,3 +136,25 @@ instance Algebra sig m => Algebra (State s :+: sig) (StateC s m) where
     L (Put s) -> pure (s, ctx)
     R other   -> thread (uncurry runState ~<~ hdl) other (s, ctx)
   {-# INLINE alg #-}
+
+instance MonadThrow m => MonadThrow (StateC s m) where
+  throwM = fromStateT . throwM
+  {-# INLINE throwM #-}
+
+instance MonadCatch m => MonadCatch (StateC s m) where
+  catch m f = fromStateT (catch (toStateT m) (toStateT . f))
+  {-# INLINE catch #-}
+
+instance MonadMask m => MonadMask (StateC s m) where
+  mask f = fromStateT (mask (\restore -> toStateT (f (fromStateT . restore . toStateT))))
+  {-# INLINE mask #-}
+
+  uninterruptibleMask f = fromStateT (uninterruptibleMask (\restore -> toStateT (f (fromStateT . restore . toStateT))))
+  {-# INLINE uninterruptibleMask #-}
+
+  generalBracket acquire release inner = fromStateT (generalBracket acquire' release' inner')
+    where
+      acquire' = toStateT acquire
+      release' = fmap (fmap toStateT) release
+      inner' = fmap toStateT inner
+  {-# INLINE generalBracket #-}

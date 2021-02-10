@@ -27,6 +27,7 @@ import Control.Applicative (Alternative)
 import Control.Carrier.State.Strict
 import Control.Effect.Writer
 import Control.Monad (MonadPlus)
+import Control.Monad.Catch
 import Control.Monad.Fail as Fail
 import Control.Monad.Fix
 import Control.Monad.IO.Class
@@ -58,7 +59,7 @@ execWriter = fmap fst . runWriter
 --
 -- @since 1.0.0.0
 newtype WriterC w m a = WriterC { runWriterC :: StateC w m a }
-  deriving (Alternative, Applicative, Functor, Monad, Fail.MonadFail, MonadFix, MonadIO, MonadPlus, MonadTrans)
+  deriving (Alternative, Applicative, Functor, Monad, Fail.MonadFail, MonadFix, MonadIO, MonadPlus, MonadTrans, MonadCatch, MonadThrow, MonadMask)
 
 instance (Monoid w, Algebra sig m) => Algebra (Writer w :+: sig) (WriterC w m) where
   alg hdl sig ctx = WriterC $ case sig of

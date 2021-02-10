@@ -20,6 +20,7 @@ import Control.Applicative (Alternative)
 import Control.Carrier.Error.Either
 import Control.Effect.Throw
 import Control.Monad (MonadPlus)
+import Control.Monad.Catch
 import Control.Monad.Fail as Fail
 import Control.Monad.Fix
 import Control.Monad.IO.Class
@@ -32,7 +33,7 @@ runThrow (ThrowC m) = runError m
 
 -- | @since 1.0.0.0
 newtype ThrowC e m a = ThrowC { runThrowC :: ErrorC e m a }
-  deriving (Alternative, Applicative, Functor, Monad, Fail.MonadFail, MonadFix, MonadIO, MonadPlus, MonadTrans)
+  deriving (Alternative, Applicative, Functor, Monad, Fail.MonadFail, MonadFix, MonadIO, MonadPlus, MonadTrans, MonadCatch, MonadMask, MonadThrow)
 
 instance Algebra sig m => Algebra (Throw e :+: sig) (ThrowC e m) where
   alg hdl sig ctx = case sig of
