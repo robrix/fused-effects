@@ -30,6 +30,9 @@ module Control.Algebra
 ) where
 
 import           Control.Algebra.Handler
+#if MIN_VERSION_transformers(0,5,4)
+import           Control.Effect.Accum.Internal
+#endif
 import           Control.Effect.Catch.Internal
 import           Control.Effect.Choose.Internal
 import           Control.Effect.Empty.Internal
@@ -41,6 +44,9 @@ import           Control.Effect.State.Internal
 import           Control.Effect.Sum ((:+:)(..), Member(..), Members)
 import           Control.Effect.Throw.Internal
 import           Control.Effect.Writer.Internal
+#if MIN_VERSION_transformers(0,5,4)
+import qualified Control.Monad.Trans.Accum as Accum
+#endif
 import qualified Control.Monad.Trans.Except as Except
 import qualified Control.Monad.Trans.Identity as Identity
 import qualified Control.Monad.Trans.Maybe as Maybe
@@ -326,3 +332,12 @@ instance (Algebra sig m, Monoid w) => Algebra (Writer w :+: sig) (Writer.Strict.
     L (Censor f m) -> Writer.Strict.censor f (hdl (m <$ ctx))
     R other        -> Writer.Strict.WriterT $ getSwap <$> thread ((\ (Swap (x, s)) -> Swap . fmap (mappend s) <$> Writer.Strict.runWriterT x) ~<~ hdl) other (Swap (ctx, mempty))
   {-# INLINE alg #-}
+
+#if MIN_VERSION_transformers(0,5,4)
+instance (Algebra sig m, Monoid w) => Algebra (Accum w :+: sig) (Accum.AccumT w m) where
+  alg hdl sig ctx = case sig of
+    L (Add w) -> ctx <$ Accum.add w
+    L Look    -> Accum.looks (<$ ctx)
+    R other   -> Accum.AccumT $ \w -> getSwap <$> thread ((\(Swap (x, s)) -> Swap . fmap (mappend s) <$> Accum.runAccumT x s) ~<~ hdl) other (Swap (ctx, w))
+  {-# INLINE alg #-}
+#endif
