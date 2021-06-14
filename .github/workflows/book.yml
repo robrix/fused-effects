@@ -1,0 +1,27 @@
+name: Documentation Book
+
+on:
+  push:
+    tags:
+      - "*.*.*.*"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+      - name: Build static site
+        uses: peaceiris/actions-mdbook@v1
+        with:
+          mdbook-version: latest
+
+      - run: mdbook build
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
